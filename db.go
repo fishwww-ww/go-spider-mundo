@@ -1,12 +1,11 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"log"
 	"strings"
-	"time"
 )
 
 const (
@@ -20,18 +19,12 @@ const (
 func InitDB() {
 	path := strings.Join([]string{USERNAME, ":", PASSWORD, "@tcp(", HOST, ":", PORT, ")/", DBNAME, "?charset=utf8"}, "")
 	var err error
-	DB, err = sql.Open("mysql", path)
+	DB, err = gorm.Open(mysql.Open(path), &gorm.Config{})
 	if err != nil {
 		log.Fatal("数据库连接失败:", err)
-		return
 	}
-
-	DB.SetConnMaxLifetime(10 * time.Second)
-	DB.SetMaxOpenConns(5)
-
-	if err := DB.Ping(); err != nil {
-		log.Fatal("数据库 Ping 失败:", err)
-		return
+	err = DB.AutoMigrate(&Content{})
+	if err != nil {
+		log.Fatal("数据库迁移失败:", err)
 	}
-	fmt.Println("数据库连接成功")
 }

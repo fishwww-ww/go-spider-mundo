@@ -1,10 +1,10 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/gorm"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -25,16 +25,17 @@ type Team struct {
 }
 
 type Content struct {
-	Name         string `json:"Name"`
-	Introduction string `json:"Introduction"`
-	Require      string `json:"Require"`
-	Number       string `json:"Number"`
-	Publisher    string `json:"Publisher"`
-	Contact      string `json:"Contact"`
-	ID           int    `json:"ID"`
+	gorm.Model
+	Name         string `json:"Name" gorm:"column:name"`
+	Introduction string `json:"Introduction" gorm:"column:introduction"`
+	Require      string `json:"Require" gorm:"column:require"`
+	Number       string `json:"Number" gorm:"column:number"`
+	Publisher    string `json:"Publisher" gorm:"column:publisher"`
+	Contact      string `json:"Contact" gorm:"column:contact"`
+	ID           int    `json:"ID" gorm:"column:id"`
 }
 
-var DB *sql.DB
+var DB *gorm.DB
 
 func main() {
 	InitDB()
@@ -42,7 +43,6 @@ func main() {
 }
 
 func mundo() {
-	//url := "https://api.bilibili.com/x/v2/reply/main?callback=jQuery17205371302484233957_164102593161&jsonp=jsonp&next=0&type=1&oid=251119469&mode=3&plat=1&_=1641025931610"
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://qgdoywhgtdnh.sealosbja.site/timerme/api/allteam?service=mundo", nil)
 	if err != nil {
@@ -64,12 +64,17 @@ func mundo() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//fmt.Println(string(body))
 	var response Response
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Name: %+v\n Introduction: %+v\n Require: %+v\n Number: %+v\n", response.Data.Team.Content[0].Name, response.Data.Team.Content[0].Introduction, response.Data.Team.Content[0].Require, response.Data.Team.Content[0].Number)
 
+	// 使用 GORM 插入数据
+	result := DB.Create(&response.Data.Team.Content)
+	if result.Error != nil {
+		log.Fatal("插入数据失败:", result.Error)
+	}
+
+	fmt.Printf("成功插入 %d 条数据\n", result.RowsAffected)
 }
